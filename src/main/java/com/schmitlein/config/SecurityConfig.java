@@ -1,6 +1,8 @@
 package com.schmitlein.config;
 
 import com.schmitlein.security.CustomUserDetailsService;
+import com.schmitlein.security.JwtAuthenticationEntryPoint;
+import com.schmitlein.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,8 +13,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.*;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -21,6 +25,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+    
+    @Autowired
+    private JwtAuthenticationEntryPoint jwt;
+    
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(){
+        return new JwtAuthenticationFilter();
+    }
     
     @Bean
     PasswordEncoder passEncoder() {
@@ -32,13 +44,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         //desactivamos los csrf(que es un tipo de ataque malicioso) del http, ya que spring tiene su propio 
         http.csrf().disable()
+                .exceptionHandling()
+                .authenticationEntryPoint(jwt)
+                .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
                 .authorizeRequests().antMatchers(HttpMethod.GET, "/api/**")//cuando quiera hacer una peticion get, permitido para cualquiera
                 .permitAll()
                 .antMatchers("/api/auth/**").permitAll()
                 .anyRequest()
-                .authenticated()
-                .and()
-                .httpBasic();
+                .authenticated();
+                
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
     }
 

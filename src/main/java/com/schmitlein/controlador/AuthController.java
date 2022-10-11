@@ -1,11 +1,13 @@
 package com.schmitlein.controlador;
 
+import com.schmitlein.DTO.JWTAuthResponseDTO;
 import com.schmitlein.DTO.LoginDTO;
 import com.schmitlein.DTO.RegistroDTO;
 import com.schmitlein.entidades.Rol;
 import com.schmitlein.entidades.Usuario;
 import com.schmitlein.repository.RolRepository;
 import com.schmitlein.repository.UsuarioRepository;
+import com.schmitlein.security.JwtTokenProvider;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,14 +38,20 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passEncoder;
     
+    @Autowired
+    private JwtTokenProvider jwtToken;
+    
     
     @PostMapping("/login")
-    public ResponseEntity<String> authenticateUser(@RequestBody LoginDTO loginDTO){
+    public ResponseEntity<JWTAuthResponseDTO> authenticateUser(@RequestBody LoginDTO loginDTO){
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getUsernameOrEmail(), loginDTO.getPassword()));
         
         SecurityContextHolder.getContext().setAuthentication(auth);
         
-        return new ResponseEntity<>("Ha iniciado seccion con exito", HttpStatus.OK);
+        //obtenemos el token del jwtTokenProvider
+        String token = jwtToken.generarToken(auth);
+        
+        return ResponseEntity.ok(new JWTAuthResponseDTO(token));
     }
     
     @PostMapping("/registar")
