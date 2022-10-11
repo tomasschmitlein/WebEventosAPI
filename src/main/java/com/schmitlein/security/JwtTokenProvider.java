@@ -1,7 +1,6 @@
 package com.schmitlein.security;
 
 //En esta clase vamos a generar el token, validarlo, obtener los clains, etc
-
 import com.schmitlein.excepciones.WebAppException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -18,54 +17,51 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JwtTokenProvider {
- 
+
     //obtenemos el valor de un propiedad JWT, de nuestro .propiertie
     @Value("${app.jwt-secret}")
     private String jwtSecret;
-    
+
     @Value("${app.jwt-expiration-milliseconds}")
-    private String jwtExpirationMs;
-    
-    public String generarToken(Authentication auth){
-        
+    private int jwtExpirationInMs;
+
+    public String generarToken(Authentication auth) {
+
         String username = auth.getName();
         Date fechaActual = new Date();
-        Date fechaExpiracion = new Date(fechaActual.getTime() + jwtExpirationMs);
-        
+        Date fechaExpiracion = new Date(fechaActual.getTime() + jwtExpirationInMs);
+
         String token = Jwts.builder().setSubject(username).setIssuedAt(new Date()).setExpiration(fechaExpiracion)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret).compact();
-        
+
         return token;
     }
-    
-    
-    public String obtenerUsernameDelJWT(String token){
-        
+
+    public String obtenerUsernameDelJWT(String token) {
+
         //los claims son los datos del token
         Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
-        
         return claims.getSubject();
     }
-    
-    public boolean validarToken(String token){
-        
+
+    public boolean validarToken(String token) {
+
         try {
-            
+
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
-            
             return true;
-            
+
         } catch (SignatureException e) {
             throw new WebAppException(HttpStatus.BAD_REQUEST, "Firma JWT no valida");
-        }catch (MalformedJwtException e) {
+        } catch (MalformedJwtException e) {
             throw new WebAppException(HttpStatus.BAD_REQUEST, "Token JWT no valido");
-        }catch (ExpiredJwtException e) {
+        } catch (ExpiredJwtException e) {
             throw new WebAppException(HttpStatus.BAD_REQUEST, "Token JWT vencido");
-        }catch (UnsupportedJwtException e) {
+        } catch (UnsupportedJwtException e) {
             throw new WebAppException(HttpStatus.BAD_REQUEST, "Token JWT no compatible");
-        }catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             throw new WebAppException(HttpStatus.BAD_REQUEST, "La cadena claims JWT esta vacia");
         }
-        
+
     }
 }

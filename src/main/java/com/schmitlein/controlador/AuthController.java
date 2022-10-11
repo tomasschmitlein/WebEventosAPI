@@ -44,12 +44,12 @@ public class AuthController {
     
     @PostMapping("/login")
     public ResponseEntity<JWTAuthResponseDTO> authenticateUser(@RequestBody LoginDTO loginDTO){
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getUsernameOrEmail(), loginDTO.getPassword()));
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getUsernameOrEmail(), loginDTO.getPassword()));
         
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         
         //obtenemos el token del jwtTokenProvider
-        String token = jwtToken.generarToken(auth);
+		String token = jwtToken.generarToken(authentication);
         
         return ResponseEntity.ok(new JWTAuthResponseDTO(token));
     }

@@ -13,51 +13,45 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-
-public class JwtAuthenticationFilter extends OncePerRequestFilter{
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
-    private JwtTokenProvider jwtToken;
-    
+    private JwtTokenProvider jwtTokenProvider;
+
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
-    
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        
+
         //traigo el token de la solicitud http
-        String token = obtenerJWTDeLaSolicitud(request);
-        
+        String token = obtenerJWTdeLaSolicitud(request);
+
         //valido el token
-        if(StringUtils.hasText(token) && jwtToken.validarToken(token)){
-            
+        if (StringUtils.hasText(token) && jwtTokenProvider.validarToken(token)) {
+
             //obtenemos el username del token
-            String username = jwtToken.obtenerUsernameDelJWT(token);
-            
+            String username = jwtTokenProvider.obtenerUsernameDelJWT(token);
+
             //cargo el usuario asociado al token
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-            
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()); 
-        
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            
+
             //establezco la seguridad
-           SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
-        
+
         filterChain.doFilter(request, response);
     }
-    
-    //Bearer token de acceso 
-    private String obtenerJWTDeLaSolicitud(HttpServletRequest request){
-        
+
+    //Bearer token de acceso
+    private String obtenerJWTdeLaSolicitud(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        
-        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")){
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
             return bearerToken.substring(7, bearerToken.length());
-        }else{
-            return null;
         }
+        return null;
     }
-    
+
 }
